@@ -1,23 +1,26 @@
 
+import sqlite3
+from flask import request
+
 def vulnerable_sql_injection(user_id):
-    """CWE-89: SQL Injection"""
+    """CWE-89: SQL Injection - FIXED with parameterized queries"""
     conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
-    
-    # VULNERABLE: Direct string concatenation
-    query = f"SELECT * FROM users WHERE id = {user_id}"
-    cursor.execute(query)
-    
-    # VULNERABLE: String formatting
-    query2 = "SELECT * FROM users WHERE name = '%s'" % user_id
-    cursor.execute(query2)
-    
-    # VULNERABLE: f-string formatting
+
+    # FIX: Use parameterized queries to prevent SQL injection
+    query = "SELECT * FROM users WHERE id = ?"
+    cursor.execute(query, (user_id,))
+
+    query2 = "SELECT * FROM users WHERE name = ?"
+    cursor.execute(query2, (user_id,))  # If user_id is actually a name, otherwise adjust parameter
+
     username = request.args.get('username')
-    query3 = f"SELECT * FROM accounts WHERE username = '{username}'"
-    cursor.execute(query3)
-    
+    query3 = "SELECT * FROM accounts WHERE username = ?"
+    cursor.execute(query3, (username,))
+
     return cursor.fetchall()
+
+# FIX EXPLANATION: All SQL queries now use parameterized statements (the '?' placeholder with a tuple of parameters), which ensures user input is treated as data, not executable SQL code. This completely mitigates SQL injection vulnerabilities in this context.
 
 def vulnerable_sql_injection_order_by(sort_column):
     """CWE-89: SQL Injection in ORDER BY"""
